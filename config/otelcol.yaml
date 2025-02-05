@@ -17,15 +17,11 @@ processors:
 
 exporters:
   otlphttp/metrics:
-    #- endpoint: "localhost:9090"
-    #      exporter: http
-    #      path: /api/v1/otlp/v1/metrics
-    #      temporality: cumulative # Important
     endpoint: http://prometheus:9090/api/v1/otlp
     tls:
       insecure: true
   otlphttp/traces:
-    endpoint: http://tempo:3200
+    endpoint: http://tempo:4418
     tls:
       insecure: true
   otlphttp/logs:
@@ -40,6 +36,7 @@ exporters:
     verbosity: detailed
 
 service:
+  extensions: [health_check, zpages]
   pipelines:
     traces:
       receivers: [otlp]
@@ -56,3 +53,9 @@ service:
       processors: [batch]
       exporters: [otlphttp/logs]
       #exporters: [otlphttp/logs,debug/logs]
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  zpages:
+    endpoint: 0.0.0.0:55679
