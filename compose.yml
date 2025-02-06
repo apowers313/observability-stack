@@ -13,9 +13,9 @@ services:
       #- --storage.tsdb.path=/data/prometheus
     volumes:
       - ./config/prometheus.yml:/prometheus/prometheus.yml
-      - $PROMETHEUS_DATA:/prometheus
-    #networks:
-      #- obs-net
+      - ${PROMETHEUS_DATA:-./data}:/prometheus
+    networks:
+      - obs-net
     ports:
       - 9090:9090
     healthcheck:
@@ -33,9 +33,9 @@ services:
       - -config.file=/etc/tempo.yaml
     volumes:
       - ./config/tempo.yaml:/etc/tempo.yaml
-      - $TEMPO_DATA:/data/tempo
-    #networks:
-      #- obs-net
+      - ${TEMPO_DATA:-./data}:/data/tempo
+    networks:
+      - obs-net
     ports:
       # internal: 4418, 4417, 9096
       - 3200:3200  # tempo web server
@@ -52,9 +52,9 @@ services:
     image: grafana/loki
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - $LOKI_DATA:/loki
-    #networks:
-      #- obs-net
+      - ${LOKI_DATA}:/loki
+    networks:
+      - obs-net
     ports:
       - 3100:3100
     healthcheck:
@@ -68,14 +68,14 @@ services:
   grafana:
     image: grafana/grafana
     volumes:
-      - $GRAFANA_DATA:/var/lib/grafana
+      - ${GRAFANA_DATA:-./data}:/var/lib/grafana
         #- ./data/grafana:/data
-    #networks:
-      #- obs-net
+    networks:
+      - obs-net
     ports:
       - 3000:3000
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_PASSWORD
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       #- GF_AUTH_ANONYMOUS_ENABLED=true
       #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       #- GF_AUTH_DISABLE_LOGIN_FORM=true
@@ -105,8 +105,8 @@ services:
       - $OTELCOL_DATA=/var/lib/otelcol
       #- /:/hostfs  ## for hostmetrics receiver
       #- /var/log:/var/log ## for filelogs receiver
-    #networks:
-      #- obs-net
+    networks:
+      - obs-net
     ports:
       - 1888:1888    # pprof extension
       - 8888:8888    # Prometheus metrics exposed by the Collector
