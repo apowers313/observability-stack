@@ -1,9 +1,9 @@
-networks:
-  obs-public:
-    driver: bridge
-  obs-private:
-    driver: overlay
-    attachable: true
+#networks:
+#  obs-public:
+#    driver: bridge
+#  obs-private:
+#    driver: overlay
+#    attachable: true
 
 # TODO: setup private comms between containers
 
@@ -12,9 +12,9 @@ services:
     image: prom/prometheus
     command:
       - --web.enable-otlp-receiver
-      #- --web.enable-remote-write-receiver
-      #- --enable-feature=exemplar-storage
-      #- --enable-feature=native-histograms
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
       #- --storage.tsdb.path=/data/prometheus
     volumes:
       - ./config/prometheus.yml:/prometheus/prometheus.yml
@@ -35,7 +35,8 @@ services:
   tempo:
     image: grafana/tempo
     user: root
-    command: [ "-config.file=/etc/tempo.yaml" ]
+    command: 
+      - -config.file=/etc/tempo.yaml
     volumes:
       - ./config/tempo.yaml:/etc/tempo.yaml
       - $TEMPO_DATA:/data/tempo
@@ -46,6 +47,7 @@ services:
       #- "14268:14268"  # jaeger ingest
       - "3200:3200"    # tempo
       - "4418:4418"    # tempo http
+      - "4417:4417"    # tempo grpc
       - "9096:9096"    # tempo grpc
       #- "4317:4317"    # otlp grpc
       #- "4318:4318"    # otlp http
@@ -81,6 +83,7 @@ services:
     image: grafana/grafana
     volumes:
       - $GRAFANA_DATA:/var/lib/grafana
+        #- ./data/grafana:/data
     #networks:
       #- obs-public
       #- obs-private
@@ -130,6 +133,7 @@ services:
       - "4318:4318"    # OTLP http receiver
         #- "55679:55679"  # zpages extension
     # XXX: healthcheck doesn't work in this container because there is no shell
+    # https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37635
     #healthcheck:
       #test: ["CMD", "curl", "-f", "http://localhost:13133"]
       #interval: 10s
