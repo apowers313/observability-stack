@@ -22,6 +22,10 @@ storage:
     local:
       path: /data/tempo/blocks
 
+compactor:
+  compaction:
+    block_retention: 175200h
+
 metrics_generator:
   processor:
     local_blocks:

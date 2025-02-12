@@ -10,6 +10,7 @@ services:
       - --web.enable-remote-write-receiver
       - --enable-feature=exemplar-storage
       - --enable-feature=native-histograms
+      - --storage.tsdb.retention.time=20y
       #- --storage.tsdb.path=/data/prometheus
     volumes:
       - ./config/prometheus.yml:/prometheus/prometheus.yml
@@ -65,6 +66,26 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  pyroscope:
+    image: grafana/pyroscope
+    volumes:
+      #- ./grafana/pyroscope-local-config.yaml:/etc/pyroscope/server.yaml
+      - ${PYROSCOPE_DATA:-./data/pyroscope}:/var/lib/pyroscope
+    networks:
+      - obs-net
+    ports:
+      - 4040:4040
+    # XXX: no $PATH and no wget = no healthcheck
+#    healthcheck:
+#      test: [ "CMD", "wget", "--spider", "http://localhost:4040/-/ready" ]
+#      interval: 5s
+#      retries: 20
+#      interval: 10s
+#      timeout: 5s
+#      retries: 3
+#      start_period: 30s
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana
     volumes:
@@ -76,6 +97,7 @@ services:
       - 3000:3000
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-pyroscope-app
       #- GF_AUTH_ANONYMOUS_ENABLED=true
       #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       #- GF_AUTH_DISABLE_LOGIN_FORM=true
@@ -96,6 +118,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
+      #pyroscope:
+        #condition: service_healthy
     restart: unless-stopped
 
   otelcol:
@@ -129,6 +153,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
+      #pyroscope:
+        #condition: service_healthy
       grafana:
         condition: service_healthy
     restart: unless-stopped
