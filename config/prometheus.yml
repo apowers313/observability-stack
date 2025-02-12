@@ -1,4 +1,7 @@
 ---
+global:
+  scrape_interval: 15s
+
 otlp:
   # Recommended attributes to be promoted to labels.
   promote_resource_attributes:
