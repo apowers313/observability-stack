@@ -1,4 +1,6 @@
 receivers:
+  influxdb:
+    endpoint: 0.0.0.0:8086
   otlp:
     protocols:
       grpc:
@@ -14,6 +16,17 @@ receivers:
 
 processors:
   batch:
+  metricstransform/hass:
+    transforms:
+      - include: (.*)
+        match_type: regexp
+        action: update
+        new_name: hass.$${1}
+  attributes/hass:
+    actions:
+      - key: service.name
+        value: hass.ato.ms
+        action: insert
 
 exporters:
   otlphttp/metrics:
@@ -28,6 +41,26 @@ exporters:
     endpoint: http://loki:3100/otlp
     tls:
       insecure: true
+  file/archive-metrics:
+    path: /file-exporter/metrics.json.zst
+    rotation:
+      max_megabytes: 100
+      max_backups: 1000
+    compression: zstd
+    # XXX: currently truncates files on restart
+    #append: true
+  file/archive-traces:
+    path: /file-exporter/traces.json.zst
+    rotation:
+      max_megabytes: 100
+      max_backups: 20000
+    compression: zstd
+  file/archive-logs:
+    path: /file-exporter/logs.json.zst
+    rotation:
+      max_megabytes: 100
+      max_backups: 20000
+    compression: zstd
   debug/metrics:
     verbosity: detailed
   debug/traces:
@@ -38,21 +71,26 @@ exporters:
 service:
   extensions: [health_check, zpages]
   pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlphttp/traces]
-      #exporters: [otlphttp/traces,debug/traces]
     metrics:
       receivers: [otlp, prometheus/collector]
       processors: [batch]
-      exporters: [otlphttp/metrics]
-      #exporters: [otlphttp/metrics,debug/metrics]
+      exporters: [file/archive-metrics, otlphttp/metrics]
+      #exporters: [file/archive-metrics, otlphttp/metrics, debug/metrics]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [file/archive-traces, otlphttp/traces]
+      #exporters: [otlphttp/traces,debug/traces]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/logs]
+      exporters: [file/archive-logs, otlphttp/logs]
       #exporters: [otlphttp/logs,debug/logs]
+    metrics/influxdebug:
+      receivers: [influxdb]
+      processors: [attributes/hass, metricstransform/hass, batch]
+      exporters: [otlphttp/metrics, debug/metrics]
+
 
 extensions:
   health_check:
