@@ -89,7 +89,8 @@ service:
     metrics/influxdebug:
       receivers: [influxdb]
       processors: [attributes/hass, metricstransform/hass, batch]
-      exporters: [otlphttp/metrics, debug/metrics]
+      exporters: [otlphttp/metrics]
+      #exporters: [otlphttp/metrics, debug/metrics]
 
 
 extensions:
