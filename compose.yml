@@ -60,7 +60,10 @@ services:
 
   loki:
     image: grafana/loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: 
+      - -config.file=/etc/loki/local-config.yaml
+      - -server.grpc-max-recv-msg-size-bytes=67108864
+      - -server.grpc-max-send-msg-size-bytes=67108864
     volumes:
       - ${LOKI_DATA}:/loki
     networks:
@@ -81,6 +84,8 @@ services:
     volumes:
       #- ./grafana/pyroscope-local-config.yaml:/etc/pyroscope/server.yaml
       - ${PYROSCOPE_DATA:-./data/pyroscope}:/var/lib/pyroscope
+    command:
+      - -pyroscopedb.max-block-duration=30s
     networks:
       - obs-net
     ports:
@@ -109,6 +114,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_INSTALL_PLUGINS=grafana-pyroscope-app
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
       #- GF_AUTH_ANONYMOUS_ENABLED=true
       #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       #- GF_AUTH_DISABLE_LOGIN_FORM=true
